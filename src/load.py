@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+import pandas as pd
 
 
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -25,5 +26,19 @@ def get_engine():
 
 
 def load_to_raw(df, table_name, engine):
+    """
+    Load a DataFrame into raw schema of the Neon database, replacing the table if it already exists.
+    """
     df.to_sql(table_name, engine, schema="raw", if_exists="replace", index=False, chunksize=10000)
     print(f"{table_name} loaded")
+
+
+def verify_rows(df, table_name, engine):
+    """
+    Compare the row count of the DataFrame with the table in Neon and raise an error if they don't match
+    """
+    db_rows = pd.read_sql(f'SELECT COUNT(*) FROM raw."{table_name}"', engine).iloc[0, 0]
+    csv_rows = df.shape[0]
+    print(f"{table_name}, csv_rows={csv_rows}, db_rows={db_rows}, ok={csv_rows == db_rows}")
+    if db_rows != csv_rows:
+        raise ValueError(f"{table_name}: db_rows:{db_rows} and csv_rows:{csv_rows} didn't match")
