@@ -22,3 +22,8 @@ def get_engine():
         raise ValueError("DATABASE_URL is not set")
     engine = create_engine(db_url, pool_pre_ping=True)
     return engine
+
+
+def load_to_raw(df, table_name, engine):
+    df.to_sql(table_name, engine, schema="raw", if_exists="replace", index=False, chunksize=10000)
+    print(f"{table_name} loaded")
