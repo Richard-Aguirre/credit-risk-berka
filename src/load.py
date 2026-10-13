@@ -8,9 +8,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import pandas as pd
-
+from src.extract import load_table
 
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+
+
+TABLES = {
+    "loan": None,
+    "account": None, 
+    "card": None, 
+    "client": None, 
+    "disp": None, 
+    "district": None, 
+    "order": None,
+    "trans": {"bank": str}
+}
 
 
 def get_engine():
@@ -27,7 +39,7 @@ def get_engine():
 
 def load_to_raw(df, table_name, engine):
     """
-    Load a DataFrame into raw schema of the Neon database, replacing the table if it already exists.
+    Load a DataFrame into the raw schema of the Neon database, replacing the table if it already exists.
     """
     df.to_sql(table_name, engine, schema="raw", if_exists="replace", index=False, chunksize=10000)
     print(f"{table_name} loaded")
@@ -42,3 +54,18 @@ def verify_rows(df, table_name, engine):
     print(f"{table_name}, csv_rows={csv_rows}, db_rows={db_rows}, ok={csv_rows == db_rows}")
     if db_rows != csv_rows:
         raise ValueError(f"{table_name}: db_rows:{db_rows} and csv_rows:{csv_rows} didn't match")
+
+
+def main():
+    """
+    Load each Berka table into the raw schema and verify its row count.
+    """
+    engine = get_engine()
+    for table_name, dtype in TABLES.items():
+        df = load_table(table_name, dtype)
+        load_to_raw(df, table_name, engine)
+        verify_rows(df, table_name, engine)
+
+
+if __name__ == "__main__":
+    main()
