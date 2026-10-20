@@ -37,11 +37,13 @@ def get_engine():
     return engine
 
 
-def load_to_raw(df, table_name, engine):
+def load_to_raw(df, table_name, engine, if_exists="replace"):
     """
-    Load a DataFrame into the raw schema of the Neon database, replacing the table if it already exists.
+    Load a DataFrame into the raw schema of the Neon database.
+    if_exists: "replace" (default) drops and recreates the table;
+    "append" adds the rows to the existing table.
     """
-    df.to_sql(table_name, engine, schema="raw", if_exists="replace", index=False, chunksize=10000)
+    df.to_sql(table_name, engine, schema="raw", if_exists=if_exists, index=False, chunksize=10000)
     print(f"{table_name} loaded")
 
 
