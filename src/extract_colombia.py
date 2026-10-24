@@ -1,9 +1,10 @@
 """
-Extract the colombia loan portfolio data from the datos.gov.co API and load it into Neon.
+Extract the Colombian loan portfolio data from the datos.gov.co API and load it into Neon.
 """
 
 import pandas as pd
 import requests
+from src.load import get_engine, load_to_raw
 
 URL = "https://www.datos.gov.co/resource/rvii-eis8.json"
 
@@ -24,3 +25,10 @@ def fetch_all_rows():
         all_rows.extend(page)
         offset += page_size
     return pd.DataFrame(all_rows)
+
+
+def get_last_date(engine):
+    """
+    Return the last cutoff date of the Colombian loan portfolio in the Neon database, as text. 
+    """
+    return pd.read_sql("SELECT MAX(fecha_corte) FROM raw.co_loan_portfolio", engine).iloc[0, 0]
