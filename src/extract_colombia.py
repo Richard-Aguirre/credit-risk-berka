@@ -41,3 +41,12 @@ def fetch_new_rows(last_date):
     params = {"$where": f"fecha_corte>'{last_date}'", "$limit": 50000}
     response = requests.get(URL, params=params)
     return pd.DataFrame(response.json())
+
+
+def get_source_updated_at():
+    """
+    Return the date of the last update of the API dataset, as text. 
+    """
+    params = {"$select": "max(:updated_at)"}
+    data = requests.get(URL, params=params).json()
+    return data[0]["max_updated_at"]
