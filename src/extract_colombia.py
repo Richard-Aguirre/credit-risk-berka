@@ -50,3 +50,10 @@ def get_source_updated_at():
     params = {"$select": "max(:updated_at)"}
     data = requests.get(URL, params=params).json()
     return data[0]["max_updated_at"]
+
+
+def get_last_loaded_source(engine):
+    """
+    Return the last source update date that was loaded successfully, or None if nothing has been loaded yet.
+    """
+    return pd.read_sql("SELECT MAX(source_updated_at) FROM raw.co_load_log WHERE status = 'success'", engine).iloc[0, 0]
