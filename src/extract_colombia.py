@@ -4,6 +4,7 @@ Extract the Colombian loan portfolio data from the datos.gov.co API and load it 
 
 import pandas as pd
 import requests
+from sqlalchemy import text
 from src.load import get_engine, load_to_raw
 
 URL = "https://www.datos.gov.co/resource/rvii-eis8.json"
@@ -68,3 +69,13 @@ def is_new_publication(source_updated_at, last_loaded):
         return True
     source_date = pd.to_datetime(source_updated_at, utc=True)
     return source_date != last_loaded
+
+
+def record_load(engine, source_updated_at, rows_loaded, status):
+    """
+    Insert a new record in raw.co_load_log with the source update date, the number of rows loaded and the load status.
+    """
+    with engine.begin() as conn:
+        conn.execute(text("""INSERT INTO raw.co_load_log (source_updated_at, rows_loaded, status) 
+                             VALUES(:source_updated_at, :rows_loaded, :status)"""), 
+                             {"source_updated_at": source_updated_at, "rows_loaded": rows_loaded, "status": status})
