@@ -57,3 +57,14 @@ def get_last_loaded_source(engine):
     Return the last source update date that was loaded successfully, or None if nothing has been loaded yet.
     """
     return pd.read_sql("SELECT MAX(source_updated_at) FROM raw.co_load_log WHERE status = 'success'", engine).iloc[0, 0]
+
+
+def is_new_publication(source_updated_at, last_loaded):
+    """
+    Compare the API update date with the last successful load. Return True if there is a new publication to 
+    load (or nothing has been loaded yet); otherwise, return False.
+    """
+    if pd.isna(last_loaded):
+        return True
+    source_date = pd.to_datetime(source_updated_at, utc=True)
+    return source_date != last_loaded
