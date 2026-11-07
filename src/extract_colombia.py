@@ -81,6 +81,22 @@ def record_load(engine, source_updated_at, rows_loaded, status):
                              {"source_updated_at": source_updated_at, "rows_loaded": rows_loaded, "status": status})
 
 
+def reconcile_counts(engine):
+    """
+    Compare the number of rows per cutoff date in Neon and in the API. If the numbers don't match, raise an error; otherwise,
+    print "Monthly counts match."
+    """
+    neon_counts = pd.read_sql("SELECT fecha_corte, COUNT(*) AS neon_rows FROM raw.co_loan_portfolio GROUP BY fecha_corte", engine)
+    params = {"$select": "fecha_corte, count(*) as api_rows", "$group": "fecha_corte", "$limit": 50000}
+    api_counts = pd.DataFrame(requests.get(URL, params=params).json())
+    api_counts["api_rows"] = api_counts["api_rows"].astype(int)
+    merge = neon_counts.merge(api_counts, on = "fecha_corte", how = "outer").sort_values(by="fecha_corte")
+    mismatches = merge[merge["neon_rows"] != merge["api_rows"]]
+    if not mismatches.empty:
+        raise ValueError(f"Monthly counts don't match:\n{mismatches}")
+    print("Monthly counts match")
+
+
 def main():
     """
     Check if the API has a new publication. If it does, reload the whole table, verify the rows and add a record in 
@@ -95,7 +111,9 @@ def main():
     df = fetch_all_rows()
     load_to_raw(df, "co_loan_portfolio", engine)
     verify_rows(df, "co_loan_portfolio", engine)
+    reconcile_counts(engine)
     record_load(engine, api_date, df.shape[0], "success")
+
 
 if __name__ == "__main__":
     main()
