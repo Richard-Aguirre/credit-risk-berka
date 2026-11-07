@@ -52,10 +52,10 @@ def verify_rows(df, table_name, engine):
     Compare the row count of the DataFrame with the table in Neon and raise an error if they don't match
     """
     db_rows = pd.read_sql(f'SELECT COUNT(*) FROM raw."{table_name}"', engine).iloc[0, 0]
-    csv_rows = df.shape[0]
-    print(f"{table_name}, csv_rows={csv_rows}, db_rows={db_rows}, ok={csv_rows == db_rows}")
-    if db_rows != csv_rows:
-        raise ValueError(f"{table_name}: db_rows:{db_rows} and csv_rows:{csv_rows} didn't match")
+    df_rows = df.shape[0]
+    print(f"{table_name}, df_rows={df_rows}, db_rows={db_rows}, ok={df_rows == db_rows}")
+    if db_rows != df_rows:
+        raise ValueError(f"{table_name}: db_rows:{db_rows} and df_rows:{df_rows} didn't match")
 
 
 def main():
