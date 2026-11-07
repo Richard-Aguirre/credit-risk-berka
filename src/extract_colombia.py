@@ -28,22 +28,6 @@ def fetch_all_rows():
     return pd.DataFrame(all_rows)
 
 
-def get_last_date(engine):
-    """
-    Return the last cutoff date of the Colombian loan portfolio in the Neon database, as text. 
-    """
-    return pd.read_sql("SELECT MAX(fecha_corte) FROM raw.co_loan_portfolio", engine).iloc[0, 0]
-
-
-def fetch_new_rows(last_date):
-    """
-    Return a DataFrame with the API rows after the last date recorded in Neon.
-    """
-    params = {"$where": f"fecha_corte>'{last_date}'", "$limit": 50000}
-    response = requests.get(URL, params=params)
-    return pd.DataFrame(response.json())
-
-
 def get_source_updated_at():
     """
     Return the date of the last update of the API dataset, as text. 
