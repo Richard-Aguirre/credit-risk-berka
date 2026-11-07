@@ -100,7 +100,7 @@ def reconcile_counts(engine):
 def main():
     """
     Check if the API has a new publication. If it does, reload the whole table, verify the rows and add a record in 
-    raw.co_load_log; otherwise, print "No new data".
+    raw.co_load_log; otherwise, print "No new data". If something goes wrong, register "failed" in the log and raise the error.
     """
     engine = get_engine()
     api_date = get_source_updated_at()
@@ -108,11 +108,15 @@ def main():
     if not is_new_publication(api_date, log_date):
         print("No new data")
         return
-    df = fetch_all_rows()
-    load_to_raw(df, "co_loan_portfolio", engine)
-    verify_rows(df, "co_loan_portfolio", engine)
-    reconcile_counts(engine)
-    record_load(engine, api_date, df.shape[0], "success")
+    try:
+        df = fetch_all_rows()
+        load_to_raw(df, "co_loan_portfolio", engine)
+        verify_rows(df, "co_loan_portfolio", engine)
+        reconcile_counts(engine)
+        record_load(engine, api_date, df.shape[0], "success")
+    except Exception:
+        record_load(engine, api_date, 0, "failed")
+        raise
 
 
 if __name__ == "__main__":
