@@ -5,7 +5,7 @@ Extract the Colombian loan portfolio data from the datos.gov.co API and load it 
 import pandas as pd
 import requests
 from sqlalchemy import text
-from src.load import get_engine, load_to_raw
+from src.load import get_engine, load_to_raw, verify_rows
 
 URL = "https://www.datos.gov.co/resource/rvii-eis8.json"
 
@@ -79,3 +79,23 @@ def record_load(engine, source_updated_at, rows_loaded, status):
         conn.execute(text("""INSERT INTO raw.co_load_log (source_updated_at, rows_loaded, status) 
                              VALUES(:source_updated_at, :rows_loaded, :status)"""), 
                              {"source_updated_at": source_updated_at, "rows_loaded": rows_loaded, "status": status})
+
+
+def main():
+    """
+    Check if the API has a new publication. If it does, reload the whole table, verify the rows and add a record in 
+    raw.co_load_log; otherwise, print "No new data".
+    """
+    engine = get_engine()
+    api_date = get_source_updated_at()
+    log_date = get_last_loaded_source(engine)
+    if not is_new_publication(api_date, log_date):
+        print("No new data")
+        return
+    df = fetch_all_rows()
+    load_to_raw(df, "co_loan_portfolio", engine)
+    verify_rows(df, "co_loan_portfolio", engine)
+    record_load(engine, api_date, df.shape[0], "success")
+
+if __name__ == "__main__":
+    main()
